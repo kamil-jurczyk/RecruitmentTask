@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import pl.kamiljurczyk.recruitmenttask.dto.NotForkRepositoriesResponse;
+import pl.kamiljurczyk.recruitmenttask.exception.InvalidRepositoryResponseException;
 import pl.kamiljurczyk.recruitmenttask.exception.UserNotFoundException;
 import wiremock.org.apache.commons.io.IOUtils;
 
@@ -26,6 +27,7 @@ class GithubRepositoriesServiceTest {
     private static final String REPOSITORIES_RESPONSE_JSON_PATH = "/__files/repositories-response.json";
     private static final String BRANCHES_RESPONSE_JSON_PATH = "/__files/branches-response.json";
     private static final String BAD_REQUEST_JSON_PATH = "/__files/bad-request.json";
+    private static final String BAD_REQUEST_501_JSON = "/__files/bad-request-501.json";
     public static final String ACCEPT_CONTENT_TYPE = "application/json";
     public static final String TEST_NOTFOUND_USERNAME = "test-notfound-username";
     public static final String CONTENT_TYPE = "Content-Type";
@@ -95,5 +97,23 @@ class GithubRepositoriesServiceTest {
         assertThatThrownBy(() -> githubRepositoriesService.getNotForksRepositories(ACCEPT_CONTENT_TYPE, TEST_NOTFOUND_USERNAME))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("User not found");
+    }
+
+    @Test
+    void shouldReturnInvalidRepositoryResponseException() throws IOException {
+        // given
+        String repositoriesResponseJson = IOUtils.resourceToString(BAD_REQUEST_501_JSON, StandardCharsets.UTF_8);
+
+        stubFor(get(urlPathMatching(REPOSITORIES_URL_PATTERN))
+                .willReturn(
+                        aResponse()
+                                .withStatus(501)
+                                .withHeader(CONTENT_TYPE, ACCEPT_CONTENT_TYPE)
+                                .withBody(repositoriesResponseJson)
+                ));
+
+        // then
+        assertThatThrownBy(() -> githubRepositoriesService.getNotForksRepositories(ACCEPT_CONTENT_TYPE, TEST_NOTFOUND_USERNAME))
+                .isInstanceOf(InvalidRepositoryResponseException.class);
     }
 }

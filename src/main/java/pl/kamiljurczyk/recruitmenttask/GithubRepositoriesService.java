@@ -2,11 +2,13 @@ package pl.kamiljurczyk.recruitmenttask;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import pl.kamiljurczyk.recruitmenttask.dto.BranchResponse;
 import pl.kamiljurczyk.recruitmenttask.dto.NotForkRepositoriesResponse;
 import pl.kamiljurczyk.recruitmenttask.dto.RepositoryResponse;
+import pl.kamiljurczyk.recruitmenttask.exception.InvalidRepositoryResponseException;
 import pl.kamiljurczyk.recruitmenttask.exception.UserNotFoundException;
 
 import java.util.ArrayList;
@@ -27,6 +29,8 @@ class GithubRepositoriesService {
     private String githubToken;
 
     private final RestClient restClient;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public GithubRepositoriesService() {
         restClient = RestClient.builder()
@@ -63,10 +67,11 @@ class GithubRepositoriesService {
                 .exchange((clientRequest, clientResponse) -> {
                             if (clientResponse.getStatusCode().is4xxClientError()) {
                                 throw new UserNotFoundException("User not found");
+                            } else if (clientResponse.getStatusCode().isSameCodeAs(HttpStatusCode.valueOf(200))) {
+                                return objectMapper.readValue(clientResponse.getBody(), RepositoryResponse[].class);
+                            } else {
+                                throw new InvalidRepositoryResponseException();
                             }
-
-                            ObjectMapper objectMapper = new ObjectMapper();
-                            return objectMapper.readValue(clientResponse.getBody(), RepositoryResponse[].class);
                         }
                 );
     }
@@ -76,10 +81,7 @@ class GithubRepositoriesService {
                 .uri(githubUrl + BRANCHES_ENDPOINT, owner, repo)
                 .header(ACCEPT_HEADER, accept)
                 .header(AUTHORIZATION_HEADER, githubToken)
-                .exchange((clientRequest, clientResponse) -> {
-                            ObjectMapper objectMapper = new ObjectMapper();
-                            return objectMapper.readValue(clientResponse.getBody(), BranchResponse[].class);
-                        }
-                );
+                .retrieve()
+                .body(BranchResponse[].class);
     }
 }
