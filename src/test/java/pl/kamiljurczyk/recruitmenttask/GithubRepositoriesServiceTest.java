@@ -76,8 +76,8 @@ class GithubRepositoriesServiceTest {
         assertThat(notForksRepositories).hasSize(1);
         assertThat(repositoriesResponse.ownerLogin()).isEqualTo(USERNAME);
         assertThat(repositoriesResponse.repositoryName()).isEqualTo(REPOSITORY_NAME);
-        assertThat(repositoriesResponse.branchList().getFirst().getName()).isEqualTo(MASTER_BRANCH);
-        assertThat(repositoriesResponse.branchList().getFirst().getCommit()).isEqualTo(COMMIT_SHA);
+        assertThat(repositoriesResponse.branchList().getFirst().name()).isEqualTo(MASTER_BRANCH);
+        assertThat(repositoriesResponse.branchList().getFirst().commit().sha()).isEqualTo(COMMIT_SHA);
     }
 
     @Test
