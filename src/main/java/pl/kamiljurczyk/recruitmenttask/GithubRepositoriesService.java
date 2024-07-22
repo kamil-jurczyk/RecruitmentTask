@@ -21,9 +21,7 @@ class GithubRepositoriesService {
     public static final String AUTHORIZATION_HEADER = "Authorization";
     public static final String REPOSITORY_ENDPOINT = "/users/{username}/repos";
     public static final String BRANCHES_ENDPOINT = "/repos/{owner}/{repo}/branches";
-
-    @Value("${github.url}")
-    private String githubUrl;
+    public static final String GITHUB_URL = "https://api.github.com";
 
     @Value("${github.token}")
     private String githubToken;
@@ -34,6 +32,7 @@ class GithubRepositoriesService {
 
     public GithubRepositoriesService() {
         restClient = RestClient.builder()
+                .baseUrl(GITHUB_URL)
                 .build();
     }
 
@@ -61,7 +60,7 @@ class GithubRepositoriesService {
 
     private RepositoryResponse[] getGithubRepositories(String accept, String username) {
         return restClient.get()
-                .uri(githubUrl + REPOSITORY_ENDPOINT, username)
+                .uri(REPOSITORY_ENDPOINT, username)
                 .header(ACCEPT_HEADER, accept)
                 .header(AUTHORIZATION_HEADER, githubToken)
                 .exchange((clientRequest, clientResponse) -> {
@@ -78,7 +77,7 @@ class GithubRepositoriesService {
 
     private BranchResponse[] getGithubBranches(String accept, String owner, String repo) {
         return restClient.get()
-                .uri(githubUrl + BRANCHES_ENDPOINT, owner, repo)
+                .uri(BRANCHES_ENDPOINT, owner, repo)
                 .header(ACCEPT_HEADER, accept)
                 .header(AUTHORIZATION_HEADER, githubToken)
                 .retrieve()
